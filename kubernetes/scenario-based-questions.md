@@ -41,3 +41,16 @@ These steps reduce system strain while you assess and mitigate.
   Make the API authenticated or introduce hCaptcha/Google reCAPTCHA to deter bots.
 
 </b></details>
+
+<details>
+<summary> A Pod is stuck in 'Pending' state. What are the common causes ?</summary>
+
+- Insufficient Resources like CPU, memory, or ephemeral storage (local disk for Pods) to satisfy the Pod's resource requests.
+
+- Node Selectors/Affinity/Taints and Tolerations Mismatch
+
+- Pod Security Policies (or newer Pod Security Standards) / Admission Controllers might prevent it from being created or scheduled, leading to Pending   or an immediate failure
+
+- Volume related issue like StorageClass not Found, PersistentVolume (PV) Provisioning Failure, PV Not Available/Bound. 
+
+</b></details>
