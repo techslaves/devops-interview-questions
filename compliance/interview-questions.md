@@ -16,3 +16,26 @@ In the context of FedRAMP (Federal Risk and Authorization Management Program), C
   CP-9: Information System Backup
 
 </b></details>
+
+<details>
+<summary>What is SSP document in FedRAMP compliance? </summary>
+  
+A FedRAMP SSP is a comprehensive record detailing the security controls for a cloud system, demonstrating how each control is implemented, maintained, and monitored
+
+Purpose:
+
+It serves as the foundational document for authorization.
+3PAOs (Third‑Party Assessment Organizations), FedRAMP reviewers, and federal agencies rely on the SSP to assess whether a CSP's cloud offering meets FedRAMP requirements
+It facilitates “do once, use many times” – enabling multiple agencies to leverage the same validated document
+
+A typical FedRAMP SSP (aligned to a specific impact level: Low, Moderate, or High) contains:
+System overview – including diagrams, boundaries, network flows, user roles, and service/deployment models 
+Security Control Implementation – Describes NIST SP 800-53-based controls; whether each is implemented, inherited, planned, or partially implemented.
+Roles & Responsibilities – Who manages each control and the division of responsibility between CSP, federal agency, or shared
+Supporting Attachments – such as contingency plans, rules of behavior, configuration management, etc. often included as SSP appendices 
+
+SSP is mandatory for any CSP seeking FedRAMP authorization—whether through an Agency ATO or a JAB P-ATO
+It uses FedRAMP‑provided templates (for the appropriate impact baseline) and follows NIST 800‑53 guidelines
+
+
+</b></details>
