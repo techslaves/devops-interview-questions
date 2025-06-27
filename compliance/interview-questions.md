@@ -37,5 +37,25 @@ Supporting Attachments – such as contingency plans, rules of behavior, configu
 SSP is mandatory for any CSP seeking FedRAMP authorization—whether through an Agency ATO or a JAB P-ATO
 It uses FedRAMP‑provided templates (for the appropriate impact baseline) and follows NIST 800‑53 guidelines
 
+</b></details>
+
+
+<details>
+<summary>What is integrated inventory workbook in Fedramp compliance? </summary>
+  
+In FedRAMP (Federal Risk and Authorization Management Program) compliance, the Integrated Inventory Workbook (IIW) is a critical supporting document required as part of the System Security Plan (SSP) package. It provides a centralized, structured, and comprehensive inventory of:
+
+Hardware
+Software
+Firmware
+Virtual assets
+Network components
+Cloud services and tools
+
+Purpose:
+  Helps 3PAOs (Third Party Assessment Organizations) during assessments
+  Supports asset tracking and change management
+  Ensures completeness of the system boundary definition
+  Identifies components subject to vulnerability scanning, logging, patching, and compliance checks
 
 </b></details>
