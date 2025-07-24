@@ -34,3 +34,8 @@ Use VPC Flow Logs, filter for REJECT status to see blocked traffic by NACL.
 <summary>If two VPCs are peered, what NACL considerations must be made? </summary>
 Ensure NACLs in both VPCs allow inbound/outbound traffic from the CIDR range of the peer VPC.
 </b></details>
+
+<details>
+<summary>Can API Gateway connect to VPC-based services?</summary>
+Yes, via VPC Link. This allows API Gateway to route traffic to private services (e.g., ECS, ALB, NLB) inside your VPC.
+</b></details>
