@@ -1,4 +1,4 @@
-# 🔥 Kubernetes Networking Interview Questions
+# Kubernetes Networking Interview Questions
 
 ### 1. Which k8s component assigns IP addresses to Pods, Services, and Worker Nodes?
 **Answer:**
