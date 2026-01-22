@@ -230,3 +230,72 @@ docker inspect --format='{{.State.Health.Status}}' <container>
 | Removed by          | `docker image prune`   | `docker image prune -a` |
 
 Dangling images are untagged leftovers, while unused images are tagged but not referenced by any container.
+
+### 27. Write a docker file with best practices
+```shell
+# ----------------------------
+# 1️⃣ Build stage
+# ----------------------------
+FROM eclipse-temurin:17-jdk AS builder
+
+WORKDIR /app
+
+# Copy only pom.xml first to leverage Docker cache
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+
+# Copy source code
+COPY src ./src
+
+# Build application
+RUN mvn clean package -DskipTests
+
+# ----------------------------
+# 2️⃣ Runtime stage
+# ----------------------------
+FROM gcr.io/distroless/java17-debian12
+
+WORKDIR /app
+
+# Copy only the built artifact
+COPY --from=builder /app/target/app.jar app.jar
+
+# Use non-root user (distroless provides nonroot)
+USER nonroot:nonroot
+
+# Expose application port
+EXPOSE 8080
+
+# JVM best practices for containers
+ENTRYPOINT ["java","-XX:MaxRAMPercentage=75","-jar","app.jar"]
+
+```
+
+Without Multistage build (Easy to remember)
+```shell
+FROM eclipse-temurin:17-jre-jammy
+
+# Create non-root user
+RUN useradd -r -u 1001 appuser
+
+WORKDIR /app
+
+# Copy only the JAR file
+COPY app.jar app.jar
+
+# Change ownership
+RUN chown appuser:appuser app.jar
+
+# Switch to non-root user
+USER appuser
+
+# Expose application port
+EXPOSE 8080
+
+# JVM tuned for containers
+ENTRYPOINT [
+  "java",
+  "-jar",
+  "app.jar"
+]
+```
