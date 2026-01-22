@@ -220,13 +220,13 @@ docker buildx build --platform linux/amd64,linux/arm64 .
 docker inspect --format='{{.State.Health.Status}}' <container>
 ```
 
----
+### 26. Difference between dangling and unused images?
+| Feature             | Dangling Image         | Unused Image            |
+| ------------------- | ---------------------- | ----------------------- |
+| Has tag             | ❌ No                   | ✅ Yes                   |
+| Used by container   | ❌ No                   | ❌ No                    |
+| Appears as `<none>` | ✅ Yes                  | ❌ No                    |
+| Created by          | Rebuild / intermediate | Old versions            |
+| Removed by          | `docker image prune`   | `docker image prune -a` |
 
-### ⚠️ Common Interview Traps
-
-**❓ Difference between `docker stop` and `docker kill`?**
-*   ✔️ `stop` sends `SIGTERM` → graceful shutdown.
-*   ✔️ `kill` sends `SIGKILL` → force kill.
-
-**❓ Why `docker exec` fails on distroless images?**
-*   ✔️ No shell (`/bin/sh` or `/bin/bash`) is present in the image.
+Dangling images are untagged leftovers, while unused images are tagged but not referenced by any container.
