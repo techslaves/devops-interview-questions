@@ -278,3 +278,16 @@ I use Docker Buildx to create multi-arch images and push a single manifest list.
 ```shell
 docker buildx build --platform linux/amd64,linux/arm64 -t myapp:latest . --push
 ```
+
+### 32. What is the difference between docker stats and docker top? 
+docker stats is used to monitor real-time container resource usage using cgroups, while docker top helps inspect the processes running inside a container using the PID namespace. Both are complementary tools used together for troubleshooting.
+
+| Feature           | docker stats   | docker top    |
+| ----------------- | -------------- | ------------- |
+| Shows             | Resource usage | Processes     |
+| CPU usage         | ✅ Yes          | ❌ No          |
+| Memory usage      | ✅ Yes          | ❌ No          |
+| Network / Disk IO | ✅ Yes          | ❌ No          |
+| Process details   | ❌ No           | ✅ Yes         |
+| Uses              | cgroups        | PID namespace |
+| Real-time         | ✅ Yes          | Snapshot      |
