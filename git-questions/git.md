@@ -30,6 +30,8 @@ Git is a **Distributed Version Control System (DVCS)** used to track changes in 
 | **Safety** | Safe (allows review before merging). | Can lead to unexpected conflicts. |
 | **Formula** | `fetch` only. | `git fetch` + `git merge`. |
 
+**Architect insight:** Prefer `fetch` + explicit `merge`/`rebase` in production workflows to avoid accidental merges.
+
 ### 4. What is the staging area (Index)?
 **Answer:**
 The **Staging Area** (or Index) is an intermediate layer between your working directory and the repository handling the history.
@@ -46,6 +48,8 @@ The **Staging Area** (or Index) is an intermediate layer between your working di
 | **Graph** | Messy (many branches/merge bubbles). | Clean (straight line). |
 | **Conflict Handling** | Resolve once per merge. | May need to resolve conflicts for *each* commit being replayed. |
 | **Use Case** | Merging feature branches to main/master. | Keeping a feature branch up-to-date with main before merging. |
+
+**Rule:** Rebase local, merge shared.
 
 ### 6. What is a "detached HEAD" state?
 **Answer:**
@@ -69,15 +73,16 @@ A text file that tells Git which files or folders to ignore (not track).
 
 | Mode | HEAD Ref | Staging Index | Working Directory | Use Case |
 | :--- | :--- | :--- | :--- | :--- |
-| **--soft** | Moves to <commit> | Preserves changes (Staged) | Preserves changes | Undo commit but keep work ready to commit again. |
+| **--soft** | Moves to <commit> | Preserves changes (Staged) | Preserves changes | Undo commit but keep work ready to commit again (fix commit messages). |
 | **--mixed** (Default) | Moves to <commit> | Resets to match HEAD (Unstaged) | Preserves changes | Undo commit & unstage files. |
-| **--hard** | Moves to <commit> | Resets to match HEAD | **DELETES CHANGES** | Discard all local work and reset to a clean state. |
+| **--hard** | Moves to <commit> | Resets to match HEAD | **DELETES CHANGES** | Discard all local work and reset to a clean state (local rollback only). |
 
 ### 9. What is `git cherry-pick`?
 **Answer:**
 It allows you to apply the changes introduced by some existing commits into your current branch.
 *   **Command:** `git cherry-pick <commit_hash>`
 *   **Scenario:** You fixed a bug in `release-1.0` branch and want to apply *only* that specific fix to `main` without merging the whole branch.
+*   **Caution:** Can cause duplicate commits if overused.
 
 ### 10. How to resolve merge conflicts?
 **Answer:**
@@ -96,11 +101,12 @@ It allows you to apply the changes introduced by some existing commits into your
 
 ### 11. What is `git stash`?
 **Answer:**
-Temporarily shelves (saves) changes in your working directory so you can work on something else, and then come back and re-apply them later.
+Temporarily shelves (saves) changes in your working directory and index state to a stack so you can work on something else, and then come back and re-apply them later.
 *   **Save:** `git stash`
 *   **List:** `git stash list`
 *   **Apply:** `git stash pop` (applies and removes from list) or `git stash apply` (applies but keeps in list).
-*   **Scenario:** You are working on a feature but need to switch branches to fix a critical bug immediately.
+*   **Scenario:** Switching branches mid-work or hotfix interruptions.
+*   **Note:** Avoid long-lived stashes — they rot quickly.
 
 ### 12. What is `git reflog`?
 **Answer:**
@@ -108,6 +114,7 @@ Temporarily shelves (saves) changes in your working directory so you can work on
 *   **Usage:** It is a safety net. It allows you to find "lost" commits (e.g., after a bad `git reset --hard` or deleting a branch).
 *   **Command:** `git reflog`
 *   **Recover:** Find the HEAD@{n} index and reset to it: `git reset --hard HEAD@{n}`.
+*   **Insight:** Git is rarely truly destructive.
 
 ### 13. What is `git bisect`?
 **Answer:**
@@ -168,8 +175,8 @@ By default, `git pull` does a merge, which creates an unnecessary "Merge branch 
 
 ### 21. How does Git ensure data integrity?
 **Answer:**
-Git uses the **SHA-1** hashing algorithm.
-*   Every file, directory structure (tree), and commit is identified by a checksum (hash) of its contents.
+Git uses the **SHA-1** (or SHA-256) hashing algorithm for content-addressable storage.
+*   Every file (blob), directory structure (tree), and commit is identified by a checksum (hash) of its contents.
 *   If a single bit changes in a file, the file's hash changes, causing the tree hash to change, and the commit hash to lose validity. This makes it impossible to alter history without detection.
 
 ### 22. What is a Bare Repository?
@@ -187,12 +194,15 @@ A repository that acts as a central storage point for sharing.
 | **Reset** | Moves HEAD back to past. | Removes commits. | **NO**. Breaks history for others. |
 | **Revert** | Creates a *new* commit that is the inverse of the target. | Adds a commit. | **YES**. Safe for public branches. |
 
-### 24. How do you squash multiple commits into one?
+**Production rule:** Always revert in shared repos.
+
+### 24. How do you squash commits and why?
 **Answer:**
 Using interactive rebase:
 1.  `git rebase -i HEAD~n` (where n is number of commits).
 2.  In the editor, change `pick` to `squash` (or `s`) for the commits you want to combine into the previous one.
 3.  Save and close. Git will prompt to merge commit messages.
+*   **Why:** Improves readability before merge. Squash feature noise, keep logical commits.
 
 ### 25. Explain Gitflow workflow.
 **Answer:**
@@ -213,7 +223,7 @@ Then add it to `.gitignore` to prevent future tracking.
 
 ### 27. What is `HEAD`, `HEAD~`, and `HEAD^`?
 **Answer:**
-*   **HEAD:** Pointer to the current snapshot/branch.
+*   **HEAD:** Symbolic reference to the current snapshot/branch. Usually points to a branch ref.
 *   **HEAD~1** (or HEAD^): The parent of the current commit.
 *   **HEAD~2:** The grandparent of the current commit.
     (Tilde `~` navigates back usually by generation, Caret `^` is used for selecting specific parents in merge commits).
@@ -256,3 +266,75 @@ To remove files that are in the directory but not added to git:
 *   `git clean -n`: **Dry run** (shows what will be deleted).
 *   `git clean -f`: Force delete files.
 *   `git clean -fd`: Delete files and directories.
+
+### 33. What is a Git branch internally?
+**Answer:**
+A lightweight pointer to a commit. Creating a branch is just creating a reference (41 bytes), not duplicating code.
+*   **Why it matters:** Branching is cheap → enables feature isolation, experimentation, and parallel pipelines.
+
+### 34. How does `git merge` work?
+**Answer:**
+Git performs a three-way merge using:
+1.  Common ancestor.
+2.  Source branch HEAD.
+3.  Target branch HEAD.
+*   Creates a merge commit unless fast-forwarded.
+*   **Architect call:** Merge commits preserve history; fast-forward keeps it linear.
+
+### 35. What causes merge conflicts?
+**Answer:**
+Same lines modified differently in two branches. Git stops auto-merge to avoid ambiguity.
+*   **Best practice:** Small, frequent merges reduce conflict probability.
+
+### 36. What happens during `git rebase`?
+**Answer:**
+Git:
+1.  Finds common ancestor.
+2.  Temporarily removes commits.
+3.  Reapplies them one by one on the new base.
+*   **Risk:** Changes commit hashes → breaks shared history.
+
+### 37. How do you undo a pushed commit safely?
+**Answer:**
+Use `git revert <commit>`.
+*   Keeps history intact.
+*   **Architect principle:** Immutable shared history.
+
+### 38. What are Git tags and types?
+**Answer:**
+*   **Lightweight:** Pointer to commit.
+*   **Annotated:** Full object with metadata (recommended for releases).
+*   **CI/CD:** Tags drive release pipelines.
+
+### 39. How does Git store data internally?
+**Answer:**
+Content-addressable storage using SHA-1/SHA-256.
+**Objects:**
+*   **blob:** File content.
+*   **tree:** Directory structure.
+*   **commit:** Snapshot info.
+*   **tag:** Reference.
+*   **Why it matters:** Integrity, deduplication, performance.
+
+### 40. How do you handle large repositories?
+**Answer:**
+*   **Shallow clones:** `git clone --depth 1`.
+*   **Git LFS:** For binaries.
+*   **Sparse checkout:** Check out only specific folders.
+*   **Monorepo tooling:** Bazel, Nx.
+*   **Architect decision:** Repo structure affects CI scale.
+
+### 41. Explain branching strategies.
+**Answer:**
+*   **Git Flow:** Release-heavy, slower.
+*   **Trunk-based:** CI/CD friendly.
+*   **Feature branching:** Common but merge-heavy.
+*   **Modern DevOps:** Trunk + short-lived branches.
+
+### 42. Git anti-patterns you avoid?
+**Answer:**
+*   Rewriting shared history.
+*   Long-lived branches.
+*   Massive commits.
+*   Binary files in Git.
+*   Manual conflict resolution without understanding base.
