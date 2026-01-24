@@ -1,6 +1,6 @@
 # Terraform Interview Questions and Answers
 
-This document contains common interview questions related to Terraform and their answers.
+This document contains common interview questions related to Terraform and their answers for interview preparation.
 
 ### 1. What are Providers in Terraform?
 **Answer:**
