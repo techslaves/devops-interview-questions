@@ -108,3 +108,143 @@ They control the even distribution of Pods across zones, nodes, or other topolog
 *   **Flexibility:** Allows for "skew" (e.g., max difference of 1 pod between zones) rather than strict "one per zone".
 *   **Autoscaling:** Works better with Cluster Autoscaler as it doesn't over-constrain the scheduler.
 *   **Production Ready:** Preferred for High Availability (HA) workloads to ensure balanced spreading.
+
+### 15. Scenario: You have a set of nodes equipped with expensive GPUs. How do you ensure that only machine learning workloads run on these nodes, and that general web-app pods don't "accidentally" get scheduled there?
+**Answer:**
+You apply a **Taint** to the GPU nodes and a **Toleration** to the ML pods.
+
+**Step 1 (Taint):** `kubectl taint nodes gpu-node-1 hardware=gpu:NoSchedule`. This "repels" any pod that doesn't explicitly say it can handle this taint.
+```shell
+kubectl taint nodes gpu-node-1 hardware=gpu:NoSchedule
+```
+
+**Step 2 (Toleration):** In the ML Pod spec, add a toleration for the key `hardware=gpu`.
+
+**Follow-up:** Does a toleration guarantee the pod will land on the GPU node?
+**No.** A toleration only *allows* it. To *force* it there, you must also use **Node Affinity**.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ml-training-pod
+spec:
+  containers:
+  - name: cuda-container
+    image: nvidia/cuda:11.0-base
+  # This allows the pod to be scheduled on the tainted node
+  tolerations:
+  - key: "hardware"
+    operator: "Equal"
+    value: "gpu"
+    effect: "NoSchedule"
+  # Optional: Use nodeAffinity to FORCE it to land there
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: hardware
+            operator: In
+            values:
+            - gpu
+```
+
+### 16. Scenario: You are deploying 3 replicas of a critical microservice. How do you ensure that Kubernetes doesn't put all 3 replicas on the same worker node (which would create a single point of failure)?
+**Answer:**
+Use **Pod Anti-Affinity** with a `topologyKey`.
+
+**The Strategy:** Set a `requiredDuringSchedulingIgnoredDuringExecution` rule. Use the label of the pod itself (e.g., `app: my-service`) as the selector and set `topologyKey: "kubernetes.io/hostname"`.
+
+**Result:** The scheduler will look at the hostname of nodes; if a node already has a pod with `app: my-service`, it will reject the second replica for that node.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-server
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web-server
+  template:
+    metadata:
+      labels:
+        app: web-server
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - web-server
+            # This checks the 'hostname' label on the node
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: nginx
+        image: nginx:latest
+```
+
+### 17. Scenario: You have a Web-App and a Redis Cache. For performance reasons, you want the Web-App pod to always run on the same node as the Redis pod to reduce network latency. How do you achieve this?
+**Answer:**
+Use **Pod Affinity**.
+
+**The Strategy:** In the Web-App deployment, define a `podAffinity` rule that searches for pods with the label `app: redis` using `topologyKey: "kubernetes.io/hostname"`.
+
+**Result:** The scheduler will prioritize (or require) placing the Web-App on whatever node is currently hosting the Redis pod.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web-app
+spec:
+  affinity:
+    podAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: app
+            operator: In
+            values:
+            - redis-cache
+        topologyKey: "kubernetes.io/hostname"
+  containers:
+  - name: web-app
+    image: my-web-app:v1
+```
+
+### 18. Scenario: Your cluster is at 95% capacity. A critical "Payment Processing" pod needs to be deployed immediately. How do you ensure it gets scheduled even if the cluster is full?
+**Answer:**
+Implement **Pod Priority and Preemption**.
+
+**The Mechanism:**
+1.  Create a `PriorityClass` object with a high integer value (e.g., 1,000,000).
+2.  Assign `priorityClassName: high-priority` to the Payment pod.
+3.  **The Result:** The scheduler will identify lower-priority pods (like "Image Resizers" or "Dev-test" pods), evict them (preemption), and give their resources to the Payment pod.
+
+```yaml
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: critical-payments
+value: 1000000
+globalDefault: false
+description: "Used for payment processing pods that must run."
+```
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: payment-processor
+spec:
+  containers:
+  - name: processor
+    image: payment-gateway:v2
+  priorityClassName: critical-payments
+```
