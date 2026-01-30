@@ -211,3 +211,23 @@ Custom resources like:
 ### 30. Real-world use case of Istio?
 **Answer:**
 Secure service-to-service communication with mTLS, enforce zero-trust access, and safely roll out new versions using traffic splitting (Canary).
+
+### 31. How does Istiod work?
+**Answer:**
+1.  **CRDs applied:** Istio CRDs (VirtualService, DestinationRule, etc.) are stored in etcd.
+2.  **Istiod watches changes:** Istiod uses Kubernetes informers to watch CRDs and core K8s resources.
+3.  **Builds mesh model:** Istiod merges traffic, security, and service discovery into an internal mesh model.
+4.  **Translates to xDS:** Model is converted into Envoy xDS configs:
+    *   **LDS:** Listeners
+    *   **RDS:** Routes
+    *   **CDS:** Clusters
+    *   **EDS:** Endpoints
+    *   **SDS:** Certs
+5.  **Envoy connects via gRPC:** Envoy sidecars maintain a long-lived xDS gRPC connection to Istiod.
+6.  **Incremental push:** Only changed configs are pushed (no full reload).
+7.  **Hot reload:** Envoy applies config in-memory, no restart, no traffic drop.
+
+**Summary:**
+"Istiod watches Istio CRDs, builds an internal mesh model, translates it into Envoy xDS configuration, and pushes incremental updates to Envoy sidecars over gRPC."
+
+**Flow:** Watch → Model → Translate → Push → Hot-Reload
