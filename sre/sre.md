@@ -246,3 +246,45 @@ Latency isn’t CPU-bound. Possible causes:
 *   Downstream dependency latency.
 *   Garbage collection pauses.
 *   **Note:** Google wants multi-layer reasoning, not guessing.
+
+### 53. What is the difference between Monitoring and Observability?
+**Answer:**
+*   **Monitoring:** Tracking "known-unknowns" (detecting when a predefined threshold is crossed, e.g., CPU > 90%).
+*   **Observability:** Understanding the internal state of a system from its external outputs (telemetry), allowing you to debug "unknown-unknowns" without shipping new code.
+
+### 54. Explain the "Three Pillars of Observability."
+**Answer:**
+1.  **Metrics:** Aggregated numbers (trends).
+2.  **Logs:** Discreet events (details).
+3.  **Traces:** Request journeys (context).
+
+### 55. What is a "Span" and how does it differ from a "Trace"?
+**Answer:**
+*   **Trace:** Represents the end-to-end journey of a request.
+*   **Span:** A single unit of work within that trace (e.g., a database query or a specific API call).
+
+### 56. How does context propagation work in distributed tracing?
+**Answer:**
+It involves the injection and extraction of metadata (like `trace-id` and `span-id`) into headers (e.g., W3C Trace Context) as the request moves across service boundaries.
+
+### 57. What is the difference between Head-based and Tail-based sampling?
+**Answer:**
+*   **Head-based:** The decision to trace is made at the start (e.g., trace 5% of all traffic). High risk of missing rare errors.
+*   **Tail-based:** The decision is made *after* the trace finishes. This allows you to keep 100% of errors and only 1% of successful traces, making it more efficient for debugging.
+
+### 58. Explain the difference between a Counter, Gauge, and Histogram.
+**Answer:**
+*   **Counter:** Always increases (e.g., total requests).
+*   **Gauge:** Can go up or down (e.g., memory usage).
+*   **Histogram:** Samples observations and counts them in buckets (e.g., request latency).
+
+### 59. What is "Cardinality" and why is it a problem for metrics?
+**Answer:**
+Cardinality refers to the number of unique label-value pairs. High cardinality (e.g., putting a `user_id` as a label in Prometheus) can crash your time-series database because it creates a unique time series for every single user.
+
+### 60. Scenario: Latency spiked for 5 minutes, but CPU and Memory on all pods looked normal. How do you find the root cause?
+**Answer:**
+1.  **Check Traces:** Use a tool like Jaeger or Tempo to find traces from that 5-minute window.
+2.  **Identify the Bottleneck:** Look for a "long span" in the trace waterfall. It might be a downstream 3rd-party API or a lock contention in the database.
+3.  **Inspect Logs:** Use the `trace_id` from the slow trace to look at the logs for that specific request to see if there were any hidden errors or warnings.
+4.  **Check Metrics:** Look for "Golden Signals" (Latency, Traffic, Errors, Saturation) specifically for the service identified in the trace.
